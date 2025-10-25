@@ -66,7 +66,8 @@ public class LoginController {
      */
     @PostMapping
     public String login(@RequestParam("username") String username,
-            @RequestParam("password") String password) {
+                    @RequestParam("password") String password,
+                    jakarta.servlet.http.HttpSession session) {
         boolean isAuthenticated = false;
 
         try {
@@ -80,15 +81,22 @@ public class LoginController {
         }
 
         if (isAuthenticated) {
-            // Redirect to home page if authentication is successful.
+            try {
+                var user = userService.getUserByUsername(username);
+                if (user != null) {
+                    session.setAttribute("userId", user.getUserId());
+                    session.setAttribute("username", username);
+                    System.out.println("User logged in: " + username + " (ID=" + user.getUserId() + ")");
+                }
+            } catch (SQLException e) {
+                e.printStackTrace();
+            }
             return "redirect:/";
         } else {
-            // Redirect back to the login page with an error message if authentication
-            // fails.
-            String message = URLEncoder.encode("Invalid username or password. Please try again.",
-                    StandardCharsets.UTF_8);
+            String message = URLEncoder.encode("Invalid username or password. Please try again.", StandardCharsets.UTF_8);
             return "redirect:/login?error=" + message;
         }
+
     }
 
 }

@@ -19,6 +19,12 @@ import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.ExpandedPost;
 import uga.menik.csx370.utility.Utility;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ui.Model;
+import jakarta.servlet.http.HttpSession;
+import uga.menik.csx370.services.PostService;
+
+
 
 /**
  * Handles /post URL and its sub urls.
@@ -128,4 +134,44 @@ public class PostController {
         return "redirect:/post/" + postId + "?error=" + message;
     }
 
+    @Autowired
+    private PostService postService;
+
+
+    /**
+     * * Handles creating a new post by the logged-in user.
+     * * Connected with the <form> in new_post_form.mustache
+ */
+@PostMapping("/new")
+public String createPost(@RequestParam("content") String content,
+                         HttpSession session,
+                         Model model) {
+
+    Object userIdObj = session.getAttribute("userId");
+    if (userIdObj == null) {
+        return "redirect:/login";
+    }
+
+    Long userId;
+    try {
+        userId = Long.parseLong(userIdObj.toString());
+    } catch (NumberFormatException e) {
+        System.err.println("Invalid userId format in session: " + userIdObj);
+        return "redirect:/login";
+    }
+    try {
+        postService.createPost(userId, content);
+        System.out.println("New post created successfully by user " + userId);
+    } catch (IllegalArgumentException e) {
+        model.addAttribute("error", e.getMessage());
+        String message = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
+        return "redirect:/?error=" + message;
+    } catch (Exception e) {
+        e.printStackTrace();
+        String message = URLEncoder.encode("Failed to create post.", StandardCharsets.UTF_8);
+        return "redirect:/?error=" + message;
+    }
+
+    return "redirect:/";
+}
 }
