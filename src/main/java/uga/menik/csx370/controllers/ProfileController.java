@@ -16,7 +16,9 @@ import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.Post;
 import uga.menik.csx370.services.UserService;
+import uga.menik.csx370.services.PostService;
 import uga.menik.csx370.utility.Utility;
+import uga.menik.csx370.models.User;
 
 /**
  * Handles /profile URL and its sub URLs.
@@ -27,14 +29,16 @@ public class ProfileController {
 
     // UserService has user login and registration related functions.
     private final UserService userService;
+    private final PostService postService;
 
     /**
      * See notes in AuthInterceptor.java regarding how this works 
      * through dependency injection and inversion of control.
      */
     @Autowired
-    public ProfileController(UserService userService) {
+    public ProfileController(UserService userService, PostService postService) {
         this.userService = userService;
+        this.postService = postService;
     }
 
     /**
@@ -60,19 +64,36 @@ public class ProfileController {
         // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("posts_page");
 
-        // Following line populates sample data.
-        // You should replace it with actual data from the database.
-        List<Post> posts = Utility.createSamplePostsListWithoutComments();
-        mv.addObject("posts", posts);
+        try {
+            // Get the current logged-in user
+            User currentUser = userService.getLoggedInUser();
+            if (currentUser == null) {
+                mv.setViewName("redirect:/login");
+                return mv;
+            }
+
+            // Get posts from the specific user
+            Long targetUserId = Long.parseLong(userId);
+            Long currentUserId = Long.parseLong(currentUser.getUserId());
+            List<Post> posts = postService.getPostsByUser(targetUserId, currentUserId);
+            mv.addObject("posts", posts);
+
+            // If no posts found, show no content message
+            if (posts.isEmpty()) {
+                mv.addObject("isNoContent", true);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Fallback to sample data if there's an error
+            List<Post> posts = Utility.createSamplePostsListWithoutComments();
+            mv.addObject("posts", posts);
+        }
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
         // String errorMessage = "Some error occured!";
         // mv.addObject("errorMessage", errorMessage);
-
-        // Enable the following line if you want to show no content message.
-        // Do that if your content list is empty.
-        // mv.addObject("isNoContent", true);
         
         return mv;
     }
