@@ -106,6 +106,30 @@ public class UserService {
         return loggedInUser;
     }
 
+    public User getUserByUsername(String username) throws SQLException {
+    String query = "SELECT * FROM user WHERE username = ?";
+    try (Connection conn = dataSource.getConnection();
+         PreparedStatement stmt = conn.prepareStatement(query)) {
+
+        stmt.setString(1, username);
+
+        try (ResultSet rs = stmt.executeQuery()) {
+            if (rs.next()) {
+                String userId = rs.getString("userId");
+                String firstName = rs.getString("firstName");
+                String lastName = rs.getString("lastName");
+
+                return new User(userId, firstName, lastName);
+            }
+        }
+    }
+    return null;
+}
+
+
+
+
+
     /**
      * Registers a new user with the given details.
      * Returns true if registration is successful. If the username already exists,
@@ -130,5 +154,5 @@ public class UserService {
             return rowsAffected > 0;
         }
     }
-
+    
 }
