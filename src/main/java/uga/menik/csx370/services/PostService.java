@@ -12,12 +12,14 @@ import java.text.SimpleDateFormat;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.Date;
 
 import uga.menik.csx370.models.Post;
 import uga.menik.csx370.models.User;
 import uga.menik.csx370.models.ExpandedPost;
 import uga.menik.csx370.models.Comment;
+import java.text.SimpleDateFormat;
+import java.sql.Timestamp;
+
 
 @Service
 public class PostService {
@@ -32,7 +34,7 @@ public class PostService {
         
         System.out.println("DEBUG: Creating post for user " + userId + " with content: " + content);
         
-        String insertPostSql = "INSERT INTO post (user_id, content) VALUES (?, ?)";
+        String insertPostSql = "INSERT INTO post (userId, content) VALUES (?, ?)";
         jdbcTemplate.update(insertPostSql, userId, content.trim());
         System.out.println("DEBUG: Post inserted successfully");
 
@@ -61,24 +63,19 @@ public class PostService {
      * Gets posts from users that the logged-in user follows, ordered by most recent first.
      */
     public List<Post> getPostsFromFollowing(Long userId) {
-        String sql = "SELECT p.post_id, p.content, p.created_at, " +
-                    "u.userId, u.firstName, u.lastName, " +
-                    "COALESCE(like_count.likes, 0) as hearts_count, " +
-                    "COALESCE(comment_count.comments, 0) as comments_count, " +
-                    "CASE WHEN user_like.user_id IS NOT NULL THEN 1 ELSE 0 END as is_hearted, " +
-                    "CASE WHEN user_bookmark.user_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked " +
-                    "FROM post p " +
-                    "JOIN user u ON p.user_id = u.userId " +
-                    "JOIN follow f ON f.followee_id = p.user_id " +
-                    "LEFT JOIN (SELECT post_id, COUNT(*) as likes FROM `like` GROUP BY post_id) like_count ON p.post_id = like_count.post_id " +
-                    "LEFT JOIN (SELECT post_id, COUNT(*) as comments FROM comment GROUP BY post_id) comment_count ON p.post_id = comment_count.post_id " +
-                    "LEFT JOIN (SELECT post_id, user_id FROM `like` WHERE user_id = ?) user_like ON p.post_id = user_like.post_id " +
-                    "LEFT JOIN (SELECT post_id, user_id FROM bookmark WHERE user_id = ?) user_bookmark ON p.post_id = user_bookmark.post_id " +
-                    "WHERE f.follower_id = ? " +
-                    "ORDER BY p.created_at DESC";
+    String sql = "SELECT p.post_id, p.content, p.created_at, " +
+                 "u.userId, u.firstName, u.lastName, " +
+                 "COALESCE(like_count.likes, 0) AS hearts_count, " +
+                 "COALESCE(comment_count.comments, 0) AS comments_count, " +
+                 "0 AS is_hearted, 0 AS is_bookmarked " +
+                 "FROM post p " +
+                 "LEFT JOIN user u ON p.userId = u.userId " +  
+                 "LEFT JOIN (SELECT post_id, COUNT(*) AS likes FROM `like` GROUP BY post_id) like_count ON p.post_id = like_count.post_id " +
+                 "LEFT JOIN (SELECT post_id, COUNT(*) AS comments FROM comment GROUP BY post_id) comment_count ON p.post_id = comment_count.post_id " +
+                 "ORDER BY p.created_at DESC";
+    return executePostQuery(sql);
+}
 
-        return executePostQuery(sql, userId, userId, userId);
-    }
 
     /**
      * Gets posts from a specific user, ordered by most recent first.
@@ -370,14 +367,14 @@ public class PostService {
     /**
      * Formats a timestamp to the required format: "Mar 07, 2025, 10:54 PM"
      */
-    private String formatDate(java.sql.Timestamp timestamp) {
+    private String formatDate(Timestamp timestamp) {
         if (timestamp == null) {
             return "Unknown";
         }
-        
-        SimpleDateFormat formatter = new SimpleDateFormat("MMM dd, yyyy, hh:mm a");
+        SimpleDateFormat formatter = new SimpleDateFormat("MMM dd, yyyy, hh:mm a", Locale.US);
         return formatter.format(new Date(timestamp.getTime()));
     }
+
 }
 
 

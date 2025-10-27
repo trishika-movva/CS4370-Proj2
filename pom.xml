@@ -8,11 +8,13 @@
   <version>1.0-SNAPSHOT</version>
   <name>csx370-web-starter</name>
   <url>http://maven.apache.org</url>
+
   <parent>
     <groupId>org.springframework.boot</groupId>
     <artifactId>spring-boot-starter-parent</artifactId>
     <version>3.1.4</version>
   </parent>
+
   <dependencies>
     <!-- Enables talking to mysql database from Java -->
     <dependency>
@@ -20,28 +22,33 @@
       <artifactId>mysql-connector-java</artifactId>
       <version>8.0.33</version>
     </dependency>
+
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-jdbc</artifactId>
       <version>3.2.3</version>
     </dependency>
+
     <!-- Enables Spring Boot web application development -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-web</artifactId>
       <version>3.1.4</version>
     </dependency>
+
     <!-- Enables mustache html templates in Spring Boot -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-mustache</artifactId>
       <version>3.1.4</version>
     </dependency>
+
     <!-- Enables password security using Spring Boot -->
     <dependency>
       <groupId>org.springframework.security</groupId>
       <artifactId>spring-security-crypto</artifactId>
     </dependency>
+
     <!-- JUnit test dependency -->
     <dependency>
       <groupId>junit</groupId>
@@ -50,4 +57,15 @@
       <scope>test</scope>
     </dependency>
   </dependencies>
+
+  <build>
+    <plugins>
+      <!-- Spring Boot Maven Plugin -->
+      <plugin>
+        <groupId>org.springframework.boot</groupId>
+        <artifactId>spring-boot-maven-plugin</artifactId>
+      </plugin>
+    </plugins>
+  </build>
+
 </project>

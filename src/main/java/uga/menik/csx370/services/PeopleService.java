@@ -26,12 +26,10 @@ public class PeopleService {
     private DataSource dataSource;
 
     /**
-     * This function should query and return all users that 
-     * are followable. The list should not contain the user 
-     * with id userIdToExclude.
+     * Returns a list of followable users (excluding the current user),
+     * including formatted last post time like "Mar 07, 2025, 10:54 PM".
      */
     public List<FollowableUser> getFollowableUsers(String userIdToExclude) {
-        // Write an SQL query to find the users that are not the current user.
         String sql =
             "SELECT u.userId, u.firstName, u.lastName, " +
             "       COALESCE(DATE_FORMAT(MAX(p.created_at), '%b %d, %Y, %h:%i %p'), 'Unknown') AS last_post_time, " +
@@ -40,14 +38,11 @@ public class PeopleService {
             "          WHERE f.follower_id = ? AND f.followee_id = u.userId " +
             "       ) THEN 1 ELSE 0 END AS is_followed " +
             "FROM user u " +
-            "LEFT JOIN post p ON p.user_id = u.userId " +
+            "LEFT JOIN post p ON p.userId = u.userId " +   
             "WHERE u.userId <> ? " +
             "GROUP BY u.userId, u.firstName, u.lastName " +
             "ORDER BY COALESCE(MAX(p.created_at), TIMESTAMP('1970-01-01 00:00:00')) DESC";
 
-        // Run the query with a datasource.
-        // See UserService.java to see how to inject DataSource instance and
-        // use it to run a query.
         List<FollowableUser> users = new ArrayList<>();
 
         try (Connection conn = dataSource.getConnection();
@@ -58,11 +53,6 @@ public class PeopleService {
             stmt.setInt(2, me);
 
             try (ResultSet rs = stmt.executeQuery()) {
-                // Use the query result to create a list of followable users.
-                // See UserService.java to see how to access rows and their attributes
-                // from the query result.
-                // Check the following createSampleFollowableUserList function to see 
-                // how to create a list of FollowableUsers.
                 while (rs.next()) {
                     String id = String.valueOf(rs.getInt("userId"));
                     String firstName = rs.getString("firstName");
@@ -70,13 +60,7 @@ public class PeopleService {
                     String lastActive = rs.getString("last_post_time");
                     boolean isFollowed = rs.getInt("is_followed") == 1;
 
-                    users.add(new FollowableUser(
-                        id,
-                        firstName,
-                        lastName,
-                        isFollowed,
-                        lastActive
-                    ));
+                    users.add(new FollowableUser(id, firstName, lastName, isFollowed, lastActive));
                 }
             }
 
@@ -84,13 +68,10 @@ public class PeopleService {
             e.printStackTrace();
         }
 
-        // Replace the following line and return the list you created.
         return users;
     }
-    
-    /**
-     * Adds a follow record to the database.
-     */
+
+    /** Adds a follow record to the database. */
     public void follow(String followerId, String followeeId) {
         String sql = "INSERT IGNORE INTO follow(follower_id, followee_id) VALUES (?, ?)";
         try (Connection conn = dataSource.getConnection();
@@ -103,9 +84,7 @@ public class PeopleService {
         }
     }
 
-    /**
-     * Removes a follow record from the database.
-     */
+    /** Removes a follow record from the database. */
     public void unfollow(String followerId, String followeeId) {
         String sql = "DELETE FROM follow WHERE follower_id = ? AND followee_id = ?";
         try (Connection conn = dataSource.getConnection();
@@ -117,5 +96,4 @@ public class PeopleService {
             e.printStackTrace();
         }
     }
-
 }

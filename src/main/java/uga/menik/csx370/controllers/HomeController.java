@@ -53,14 +53,14 @@ public class HomeController {
 
         try {
             // Get the logged-in user
-            User loggedInUser = userService.getLoggedInUser();
-            if (loggedInUser == null) {
+            Object userIdObj = session.getAttribute("userId");
+            if (userIdObj == null) {
                 mv.setViewName("redirect:/login");
                 return mv;
             }
+            Long userId = Long.parseLong(userIdObj.toString());
 
             // Get posts from users that the logged-in user follows
-            Long userId = Long.parseLong(loggedInUser.getUserId());
             List<Post> posts = postService.getPostsFromFollowing(userId);
             mv.addObject("posts", posts);
 

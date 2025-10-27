@@ -100,8 +100,9 @@ public class Post extends BasicPost {
      * @return HTML-formatted post content with clickable hashtags
      */
     public String getFormattedContentHtml() {
-        if (content == null) return "";
-        return content.replaceAll(
+        String contentText = getContent();
+        if (contentText == null) return "";
+        return contentText.replaceAll(
             "#(\\w+)",
             "<a href=\"/hashtagsearch?hashtags=%23$1\" style=\"color:#1DA1F2;text-decoration:none;\">#$1</a>"
         );
