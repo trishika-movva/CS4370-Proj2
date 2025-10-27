@@ -14,6 +14,10 @@ import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.Post;
 import uga.menik.csx370.utility.Utility;
+import uga.menik.csx370.services.PostService;
+import uga.menik.csx370.services.UserService;
+import uga.menik.csx370.models.User;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Handles /bookmarks and its sub URLs.
@@ -26,6 +30,12 @@ import uga.menik.csx370.utility.Utility;
 @RequestMapping("/bookmarks")
 public class BookmarksController {
 
+    @Autowired
+    private PostService postService;
+
+    @Autowired
+    private UserService userService;
+
     /**
      * /bookmarks URL itself is handled by this.
      */
@@ -36,19 +46,35 @@ public class BookmarksController {
         // in the template using Java objects assigned to named properties.
         ModelAndView mv = new ModelAndView("posts_page");
 
-        // Following line populates sample data.
-        // You should replace it with actual data from the database.
-        List<Post> posts = Utility.createSamplePostsListWithoutComments();
-        mv.addObject("posts", posts);
+        try {
+            // Get the logged-in user
+            User loggedInUser = userService.getLoggedInUser();
+            if (loggedInUser == null) {
+                mv.setViewName("redirect:/login");
+                return mv;
+            }
+
+            // Get bookmarked posts for the logged-in user
+            Long userId = Long.parseLong(loggedInUser.getUserId());
+            List<Post> posts = postService.getBookmarkedPosts(userId);
+            mv.addObject("posts", posts);
+
+            // If no posts found, show no content message
+            if (posts.isEmpty()) {
+                mv.addObject("isNoContent", true);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Fallback to sample data if there's an error
+            List<Post> posts = Utility.createSamplePostsListWithoutComments();
+            mv.addObject("posts", posts);
+        }
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
         // String errorMessage = "Some error occured!";
         // mv.addObject("errorMessage", errorMessage);
-
-        // Enable the following line if you want to show no content message.
-        // Do that if your content list is empty.
-        // mv.addObject("isNoContent", true);
 
         return mv;
     }

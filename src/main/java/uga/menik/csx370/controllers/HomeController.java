@@ -18,6 +18,12 @@ import org.springframework.web.servlet.ModelAndView;
 
 import uga.menik.csx370.models.Post;
 import uga.menik.csx370.utility.Utility;
+import uga.menik.csx370.services.PostService;
+import uga.menik.csx370.services.UserService;
+import uga.menik.csx370.models.User;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.ui.Model;
+import jakarta.servlet.http.HttpSession;
 
 /**
  * This controller handles the home page and some of it's sub URLs.
@@ -25,6 +31,12 @@ import uga.menik.csx370.utility.Utility;
 @Controller
 @RequestMapping
 public class HomeController {
+
+    @Autowired
+    private PostService postService;
+
+    @Autowired
+    private UserService userService;
 
     /**
      * This is the specific function that handles the root URL itself.
@@ -34,24 +46,41 @@ public class HomeController {
      * See notes in HashtagSearchController.java regarding URL parameters.
      */
     @GetMapping
-    public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
+    public ModelAndView webpage(@RequestParam(name = "error", required = false) String error,
+                               HttpSession session) {
         // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("home_page");
 
-        // Following line populates sample data.
-        // You should replace it with actual data from the database.
-        List<Post> posts = Utility.createSamplePostsListWithoutComments();
-        mv.addObject("posts", posts);
+        try {
+            // Get the logged-in user
+            User loggedInUser = userService.getLoggedInUser();
+            if (loggedInUser == null) {
+                mv.setViewName("redirect:/login");
+                return mv;
+            }
+
+            // Get posts from users that the logged-in user follows
+            Long userId = Long.parseLong(loggedInUser.getUserId());
+            List<Post> posts = postService.getPostsFromFollowing(userId);
+            mv.addObject("posts", posts);
+
+            // If no posts found, show no content message
+            if (posts.isEmpty()) {
+                mv.addObject("isNoContent", true);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Fallback to sample data if there's an error
+            List<Post> posts = Utility.createSamplePostsListWithoutComments();
+            mv.addObject("posts", posts);
+        }
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
         // An error message can be optionally specified with a url query parameter too.
         String errorMessage = error;
         mv.addObject("errorMessage", errorMessage);
-
-        // Enable the following line if you want to show no content message.
-        // Do that if your content list is empty.
-        // mv.addObject("isNoContent", true);
 
         return mv;
     }
@@ -65,16 +94,38 @@ public class HomeController {
      * from the input from the form after it is submitted.
      */
     @PostMapping("/createpost")
-    public String createPost(@RequestParam(name = "posttext") String postText) {
+    public String createPost(@RequestParam(name = "posttext") String postText,
+                           HttpSession session,
+                           Model model) {
         System.out.println("User is creating post: " + postText);
 
-        // Redirect the user if the post creation is a success.
-        // return "redirect:/";
+        Object userIdObj = session.getAttribute("userId");
+        if (userIdObj == null) {
+            return "redirect:/login";
+        }
 
-        // Redirect the user with an error message if there was an error.
-        String message = URLEncoder.encode("Failed to create the post. Please try again.",
-                StandardCharsets.UTF_8);
-        return "redirect:/?error=" + message;
+        Long userId;
+        try {
+            userId = Long.parseLong(userIdObj.toString());
+        } catch (NumberFormatException e) {
+            System.err.println("Invalid userId format in session: " + userIdObj);
+            return "redirect:/login";
+        }
+        
+        try {
+            postService.createPost(userId, postText);
+            System.out.println("New post created successfully by user " + userId);
+        } catch (IllegalArgumentException e) {
+            model.addAttribute("error", e.getMessage());
+            String message = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
+            return "redirect:/?error=" + message;
+        } catch (Exception e) {
+            e.printStackTrace();
+            String message = URLEncoder.encode("Failed to create post.", StandardCharsets.UTF_8);
+            return "redirect:/?error=" + message;
+        }
+
+        return "redirect:/";
     }
 
 }

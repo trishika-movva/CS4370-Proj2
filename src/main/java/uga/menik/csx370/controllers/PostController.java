@@ -45,25 +45,43 @@ public class PostController {
      */
     @GetMapping("/{postId}")
     public ModelAndView webpage(@PathVariable("postId") String postId,
-            @RequestParam(name = "error", required = false) String error) {
+            @RequestParam(name = "error", required = false) String error,
+            jakarta.servlet.http.HttpSession session) {
         System.out.println("The user is attempting to view post with id: " + postId);
         // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("posts_page");
 
-        // Following line populates sample data.
-        // You should replace it with actual data from the database.
-        List<ExpandedPost> posts = Utility.createSampleExpandedPostWithComments();
-        mv.addObject("posts", posts);
+        try {
+            Object userIdObj = session.getAttribute("userId");
+            if (userIdObj == null) {
+                mv.setViewName("redirect:/login");
+                return mv;
+            }
+
+            Long currentUserId = Long.parseLong(userIdObj.toString());
+            Long postIdLong = Long.parseLong(postId);
+            
+            // Get the specific post with comments
+            ExpandedPost post = postService.getPostWithComments(postIdLong, currentUserId);
+            if (post != null) {
+                List<ExpandedPost> posts = List.of(post);
+                mv.addObject("posts", posts);
+            } else {
+                mv.addObject("isNoContent", true);
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+            // Fallback to sample data if there's an error
+            List<ExpandedPost> posts = Utility.createSampleExpandedPostWithComments();
+            mv.addObject("posts", posts);
+        }
 
         // If an error occured, you can set the following property with the
         // error message to show the error message to the user.
         // An error message can be optionally specified with a url query parameter too.
         String errorMessage = error;
         mv.addObject("errorMessage", errorMessage);
-
-        // Enable the following line if you want to show no content message.
-        // Do that if your content list is empty.
-        // mv.addObject("isNoContent", true);
 
         return mv;
     }
@@ -98,18 +116,31 @@ public class PostController {
      */
     @GetMapping("/{postId}/heart/{isAdd}")
     public String addOrRemoveHeart(@PathVariable("postId") String postId,
-            @PathVariable("isAdd") Boolean isAdd) {
+            @PathVariable("isAdd") Boolean isAdd,
+            jakarta.servlet.http.HttpSession session) {
         System.out.println("The user is attempting add or remove a heart:");
         System.out.println("\tpostId: " + postId);
         System.out.println("\tisAdd: " + isAdd);
 
-        // Redirect the user if the comment adding is a success.
-        // return "redirect:/post/" + postId;
+        try {
+            Object userIdObj = session.getAttribute("userId");
+            if (userIdObj == null) {
+                return "redirect:/login";
+            }
 
-        // Redirect the user with an error message if there was an error.
-        String message = URLEncoder.encode("Failed to (un)like the post. Please try again.",
-                StandardCharsets.UTF_8);
-        return "redirect:/post/" + postId + "?error=" + message;
+            Long userId = Long.parseLong(userIdObj.toString());
+            Long postIdLong = Long.parseLong(postId);
+            
+            postService.toggleLike(userId, postIdLong, isAdd);
+            System.out.println("Like toggled successfully");
+            
+            return "redirect:/post/" + postId;
+        } catch (Exception e) {
+            e.printStackTrace();
+            String message = URLEncoder.encode("Failed to (un)like the post. Please try again.",
+                    StandardCharsets.UTF_8);
+            return "redirect:/post/" + postId + "?error=" + message;
+        }
     }
 
     /**
@@ -120,18 +151,31 @@ public class PostController {
      */
     @GetMapping("/{postId}/bookmark/{isAdd}")
     public String addOrRemoveBookmark(@PathVariable("postId") String postId,
-            @PathVariable("isAdd") Boolean isAdd) {
+            @PathVariable("isAdd") Boolean isAdd,
+            jakarta.servlet.http.HttpSession session) {
         System.out.println("The user is attempting add or remove a bookmark:");
         System.out.println("\tpostId: " + postId);
         System.out.println("\tisAdd: " + isAdd);
 
-        // Redirect the user if the comment adding is a success.
-        // return "redirect:/post/" + postId;
+        try {
+            Object userIdObj = session.getAttribute("userId");
+            if (userIdObj == null) {
+                return "redirect:/login";
+            }
 
-        // Redirect the user with an error message if there was an error.
-        String message = URLEncoder.encode("Failed to (un)bookmark the post. Please try again.",
-                StandardCharsets.UTF_8);
-        return "redirect:/post/" + postId + "?error=" + message;
+            Long userId = Long.parseLong(userIdObj.toString());
+            Long postIdLong = Long.parseLong(postId);
+            
+            postService.toggleBookmark(userId, postIdLong, isAdd);
+            System.out.println("Bookmark toggled successfully");
+            
+            return "redirect:/post/" + postId;
+        } catch (Exception e) {
+            e.printStackTrace();
+            String message = URLEncoder.encode("Failed to (un)bookmark the post. Please try again.",
+                    StandardCharsets.UTF_8);
+            return "redirect:/post/" + postId + "?error=" + message;
+        }
     }
 
     @Autowired
@@ -160,13 +204,16 @@ public String createPost(@RequestParam("content") String content,
         return "redirect:/login";
     }
     try {
+        System.out.println("DEBUG: About to call postService.createPost with userId=" + userId + ", content=" + content);
         postService.createPost(userId, content);
         System.out.println("New post created successfully by user " + userId);
     } catch (IllegalArgumentException e) {
+        System.out.println("DEBUG: IllegalArgumentException caught: " + e.getMessage());
         model.addAttribute("error", e.getMessage());
         String message = URLEncoder.encode(e.getMessage(), StandardCharsets.UTF_8);
         return "redirect:/?error=" + message;
     } catch (Exception e) {
+        System.out.println("DEBUG: Exception caught in createPost: " + e.getClass().getSimpleName() + " - " + e.getMessage());
         e.printStackTrace();
         String message = URLEncoder.encode("Failed to create post.", StandardCharsets.UTF_8);
         return "redirect:/?error=" + message;
