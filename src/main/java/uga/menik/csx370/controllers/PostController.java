@@ -22,6 +22,7 @@ import uga.menik.csx370.utility.Utility;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.ui.Model;
 import jakarta.servlet.http.HttpSession;
+import uga.menik.csx370.services.CommentService;
 import uga.menik.csx370.services.PostService;
 
 
@@ -94,19 +95,32 @@ public class PostController {
      */
     @PostMapping("/{postId}/comment")
     public String postComment(@PathVariable("postId") String postId,
-            @RequestParam(name = "comment") String comment) {
+                            @RequestParam(name = "comment") String comment,
+                            HttpSession session) {
         System.out.println("The user is attempting add a comment:");
         System.out.println("\tpostId: " + postId);
         System.out.println("\tcomment: " + comment);
 
-        // Redirect the user if the comment adding is a success.
-        // return "redirect:/post/" + postId;
+        Object userIdObj = session.getAttribute("userId");
+        if (userIdObj == null) {
+            return "redirect:/login";
+        }
 
-        // Redirect the user with an error message if there was an error.
-        String message = URLEncoder.encode("Failed to post the comment. Please try again.",
-                StandardCharsets.UTF_8);
-        return "redirect:/post/" + postId + "?error=" + message;
+        Long userId = Long.parseLong(userIdObj.toString());
+        Long postIdLong = Long.parseLong(postId);
+
+        try {
+            commentService.addComment(userId, postIdLong, comment);
+            System.out.println("✅ Comment added successfully by user " + userId);
+            return "redirect:/post/" + postId; // reload post with comment visible
+        } catch (Exception e) {
+            e.printStackTrace();
+            String message = URLEncoder.encode("Failed to post the comment. Please try again.",
+                    StandardCharsets.UTF_8);
+            return "redirect:/post/" + postId + "?error=" + message;
+        }
     }
+
 
     /**
      * Handles likes added on posts.
@@ -181,6 +195,8 @@ public class PostController {
     @Autowired
     private PostService postService;
 
+    @Autowired
+    private CommentService commentService;
 
     /**
      * * Handles creating a new post by the logged-in user.

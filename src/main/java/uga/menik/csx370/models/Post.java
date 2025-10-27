@@ -92,4 +92,18 @@ public class Post extends BasicPost {
     public boolean isBookmarked() {
         return isBookmarked;
     }
+
+    /**
+     * Converts hashtags in the post content (e.g., #summer) into clickable links.
+     * These links route to /hashtagsearch?hashtags=%23tag.
+     *
+     * @return HTML-formatted post content with clickable hashtags
+     */
+    public String getFormattedContentHtml() {
+        if (content == null) return "";
+        return content.replaceAll(
+            "#(\\w+)",
+            "<a href=\"/hashtagsearch?hashtags=%23$1\" style=\"color:#1DA1F2;text-decoration:none;\">#$1</a>"
+        );
+    }
 }
