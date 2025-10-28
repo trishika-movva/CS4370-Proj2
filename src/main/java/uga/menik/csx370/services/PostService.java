@@ -67,13 +67,18 @@ public class PostService {
                  "u.userId, u.firstName, u.lastName, " +
                  "COALESCE(like_count.likes, 0) AS hearts_count, " +
                  "COALESCE(comment_count.comments, 0) AS comments_count, " +
-                 "0 AS is_hearted, 0 AS is_bookmarked " +
+                 "CASE WHEN user_like.user_id IS NOT NULL THEN 1 ELSE 0 END AS is_hearted, " +
+                 "CASE WHEN user_bookmark.user_id IS NOT NULL THEN 1 ELSE 0 END AS is_bookmarked " +
                  "FROM post p " +
-                 "LEFT JOIN user u ON p.user_id = u.userId " +  
+                 "JOIN follow f ON p.user_id = f.followee_id " +
+                 "JOIN user u ON p.user_id = u.userId " +  
                  "LEFT JOIN (SELECT post_id, COUNT(*) AS likes FROM `like` GROUP BY post_id) like_count ON p.post_id = like_count.post_id " +
                  "LEFT JOIN (SELECT post_id, COUNT(*) AS comments FROM comment GROUP BY post_id) comment_count ON p.post_id = comment_count.post_id " +
+                 "LEFT JOIN (SELECT post_id, user_id FROM `like` WHERE user_id = ?) user_like ON p.post_id = user_like.post_id " +
+                 "LEFT JOIN (SELECT post_id, user_id FROM bookmark WHERE user_id = ?) user_bookmark ON p.post_id = user_bookmark.post_id " +
+                 "WHERE f.follower_id = ? " +
                  "ORDER BY p.created_at DESC";
-    return executePostQuery(sql);
+    return executePostQuery(sql, userId, userId, userId);
 }
 
 
