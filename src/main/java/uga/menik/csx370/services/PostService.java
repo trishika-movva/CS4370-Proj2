@@ -17,7 +17,6 @@ import uga.menik.csx370.models.Post;
 import uga.menik.csx370.models.User;
 import uga.menik.csx370.models.ExpandedPost;
 import uga.menik.csx370.models.Comment;
-import java.text.SimpleDateFormat;
 import java.sql.Timestamp;
 
 
@@ -67,18 +66,13 @@ public class PostService {
                  "u.userId, u.firstName, u.lastName, " +
                  "COALESCE(like_count.likes, 0) AS hearts_count, " +
                  "COALESCE(comment_count.comments, 0) AS comments_count, " +
-                 "CASE WHEN user_like.user_id IS NOT NULL THEN 1 ELSE 0 END AS is_hearted, " +
-                 "CASE WHEN user_bookmark.user_id IS NOT NULL THEN 1 ELSE 0 END AS is_bookmarked " +
+                 "0 AS is_hearted, 0 AS is_bookmarked " +
                  "FROM post p " +
-                 "JOIN follow f ON p.user_id = f.followee_id " +
-                 "JOIN user u ON p.user_id = u.userId " +  
+                 "LEFT JOIN user u ON p.user_id = u.userId " +  
                  "LEFT JOIN (SELECT post_id, COUNT(*) AS likes FROM `like` GROUP BY post_id) like_count ON p.post_id = like_count.post_id " +
                  "LEFT JOIN (SELECT post_id, COUNT(*) AS comments FROM comment GROUP BY post_id) comment_count ON p.post_id = comment_count.post_id " +
-                 "LEFT JOIN (SELECT post_id, user_id FROM `like` WHERE user_id = ?) user_like ON p.post_id = user_like.post_id " +
-                 "LEFT JOIN (SELECT post_id, user_id FROM bookmark WHERE user_id = ?) user_bookmark ON p.post_id = user_bookmark.post_id " +
-                 "WHERE f.follower_id = ? " +
                  "ORDER BY p.created_at DESC";
-    return executePostQuery(sql, userId, userId, userId);
+    return executePostQuery(sql);
 }
 
 
@@ -131,37 +125,46 @@ public class PostService {
      * Gets posts by hashtags, ordered by most recent first.
      */
     public List<Post> getPostsByHashtags(List<String> hashtags, Long currentUserId) {
-        if (hashtags.isEmpty()) {
-            return new ArrayList<>();
-        }
-
-        StringBuilder sql = new StringBuilder();
-        sql.append("SELECT p.post_id, p.content, p.created_at, ");
-        sql.append("u.userId, u.firstName, u.lastName, ");
-        sql.append("COALESCE(like_count.likes, 0) as hearts_count, ");
-        sql.append("COALESCE(comment_count.comments, 0) as comments_count, ");
-        sql.append("CASE WHEN user_like.user_id IS NOT NULL THEN 1 ELSE 0 END as is_hearted, ");
-        sql.append("CASE WHEN user_bookmark.user_id IS NOT NULL THEN 1 ELSE 0 END as is_bookmarked ");
-        sql.append("FROM post p ");
-        sql.append("JOIN user u ON p.user_id = u.userId ");
-        sql.append("JOIN post_hashtag ph ON p.post_id = ph.post_id ");
-        sql.append("JOIN hashtag h ON ph.hashtag_id = h.hashtag_id ");
-        sql.append("LEFT JOIN (SELECT post_id, COUNT(*) as likes FROM `like` GROUP BY post_id) like_count ON p.post_id = like_count.post_id ");
-        sql.append("LEFT JOIN (SELECT post_id, COUNT(*) as comments FROM comment GROUP BY post_id) comment_count ON p.post_id = comment_count.post_id ");
-        sql.append("LEFT JOIN (SELECT post_id, user_id FROM `like` WHERE user_id = ?) user_like ON p.post_id = user_like.post_id ");
-        sql.append("LEFT JOIN (SELECT post_id, user_id FROM bookmark WHERE user_id = ?) user_bookmark ON p.post_id = user_bookmark.post_id ");
-        sql.append("WHERE h.tag IN (");
-        
-        for (int i = 0; i < hashtags.size(); i++) {
-            if (i > 0) sql.append(", ");
-            sql.append("?");
-        }
-        sql.append(") ");
-        sql.append("GROUP BY p.post_id, p.content, p.created_at, u.userId, u.firstName, u.lastName ");
-        sql.append("ORDER BY p.created_at DESC");
-
-        return executePostQueryWithHashtags(sql.toString(), hashtags, currentUserId, currentUserId);
+    if (hashtags == null || hashtags.isEmpty()) {
+        return new ArrayList<>();
     }
+
+    StringBuilder sql = new StringBuilder();
+    sql.append("SELECT p.post_id, p.content, p.created_at, ");
+    sql.append("u.userId, u.firstName, u.lastName, ");
+    sql.append("COALESCE(like_count.likes, 0) AS hearts_count, ");
+    sql.append("COALESCE(comment_count.comments, 0) AS comments_count, ");
+    sql.append("CASE WHEN user_like.user_id IS NOT NULL THEN 1 ELSE 0 END AS is_hearted, ");
+    sql.append("CASE WHEN user_bookmark.user_id IS NOT NULL THEN 1 ELSE 0 END AS is_bookmarked ");
+    sql.append("FROM post p ");
+    sql.append("JOIN user u ON p.user_id = u.userId ");
+    sql.append("JOIN post_hashtag ph ON p.post_id = ph.post_id ");
+    sql.append("JOIN hashtag h ON ph.hashtag_id = h.hashtag_id ");
+    sql.append("LEFT JOIN (SELECT post_id, COUNT(*) AS likes FROM `like` GROUP BY post_id) like_count ON p.post_id = like_count.post_id ");
+    sql.append("LEFT JOIN (SELECT post_id, COUNT(*) AS comments FROM comment GROUP BY post_id) comment_count ON p.post_id = comment_count.post_id ");
+    sql.append("LEFT JOIN (SELECT post_id, user_id FROM `like` WHERE user_id = ?) user_like ON p.post_id = user_like.post_id ");
+    sql.append("LEFT JOIN (SELECT post_id, user_id FROM bookmark WHERE user_id = ?) user_bookmark ON p.post_id = user_bookmark.post_id ");
+    sql.append("WHERE h.tag IN (");
+    for (int i = 0; i < hashtags.size(); i++) {
+        if (i > 0) sql.append(", ");
+        sql.append("?");
+    }
+    sql.append(") ");
+    sql.append("GROUP BY p.post_id, p.content, p.created_at, u.userId, u.firstName, u.lastName ");
+    sql.append("HAVING COUNT(DISTINCT h.tag) = ? ");
+    sql.append("ORDER BY p.created_at DESC");
+
+    // The helper only binds from the varargs.
+    // ORDER MATTERS: likeUserId, bookmarkUserId, IN (...) tags, HAVING tagCount
+    return executePostQueryWithHashtags(
+        sql.toString(),
+        hashtags,                       // required by signature (ignored by binder)
+        currentUserId,                  // 1) user_like.user_id = ?
+        currentUserId,                  // 2) user_bookmark.user_id = ?
+        hashtags,                       // 3) expands to IN (?, ?, …)
+        Integer.valueOf(hashtags.size())// 4) HAVING COUNT(DISTINCT h.tag) = ?
+    );
+}
 
     /**
      * Helper method to execute post queries and return Post objects.
@@ -212,20 +215,17 @@ public class PostService {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             int paramIndex = 1;
-            
-            // First, set the user_id parameters for like and bookmark checks (2 parameters)
             for (Object param : params) {
-                if (!(param instanceof List)) {
+                if (param instanceof List) {
+                    @SuppressWarnings("unchecked")
+                    List<String> hashtagList = (List<String>) param;
+                    for (String hashtag : hashtagList) {
+                        stmt.setString(paramIndex++, hashtag);
+                    }
+                } else {
                     stmt.setObject(paramIndex++, param);
                 }
             }
-            
-            // Then, set the hashtag parameters (hashtags.size() parameters)
-            for (String hashtag : hashtags) {
-                stmt.setString(paramIndex++, hashtag);
-            }
-            
-            // No additional parameters needed for OR logic
             
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -383,7 +383,5 @@ public class PostService {
     }
 
 }
-
-
 
 
