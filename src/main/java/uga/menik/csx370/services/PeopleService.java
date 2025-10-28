@@ -38,7 +38,7 @@ public class PeopleService {
             "          WHERE f.follower_id = ? AND f.followee_id = u.userId " +
             "       ) THEN 1 ELSE 0 END AS is_followed " +
             "FROM user u " +
-            "LEFT JOIN post p ON p.userId = u.userId " +   
+            "LEFT JOIN post p ON p.user_id = u.userId " +   
             "WHERE u.userId <> ? " +
             "GROUP BY u.userId, u.firstName, u.lastName " +
             "ORDER BY COALESCE(MAX(p.created_at), TIMESTAMP('1970-01-01 00:00:00')) DESC";

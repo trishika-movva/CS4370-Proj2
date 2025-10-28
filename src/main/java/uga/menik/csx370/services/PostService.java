@@ -34,7 +34,7 @@ public class PostService {
         
         System.out.println("DEBUG: Creating post for user " + userId + " with content: " + content);
         
-        String insertPostSql = "INSERT INTO post (userId, content) VALUES (?, ?)";
+        String insertPostSql = "INSERT INTO post (user_id, content) VALUES (?, ?)";
         jdbcTemplate.update(insertPostSql, userId, content.trim());
         System.out.println("DEBUG: Post inserted successfully");
 
@@ -69,7 +69,7 @@ public class PostService {
                  "COALESCE(comment_count.comments, 0) AS comments_count, " +
                  "0 AS is_hearted, 0 AS is_bookmarked " +
                  "FROM post p " +
-                 "LEFT JOIN user u ON p.userId = u.userId " +  
+                 "LEFT JOIN user u ON p.user_id = u.userId " +  
                  "LEFT JOIN (SELECT post_id, COUNT(*) AS likes FROM `like` GROUP BY post_id) like_count ON p.post_id = like_count.post_id " +
                  "LEFT JOIN (SELECT post_id, COUNT(*) AS comments FROM comment GROUP BY post_id) comment_count ON p.post_id = comment_count.post_id " +
                  "ORDER BY p.created_at DESC";
