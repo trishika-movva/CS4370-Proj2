@@ -158,10 +158,9 @@ public class PostService {
         }
         sql.append(") ");
         sql.append("GROUP BY p.post_id, p.content, p.created_at, u.userId, u.firstName, u.lastName ");
-        sql.append("HAVING COUNT(DISTINCT h.tag) = ? ");
         sql.append("ORDER BY p.created_at DESC");
 
-        return executePostQueryWithHashtags(sql.toString(), hashtags, currentUserId, currentUserId, hashtags.size());
+        return executePostQueryWithHashtags(sql.toString(), hashtags, currentUserId, currentUserId);
     }
 
     /**
@@ -213,17 +212,20 @@ public class PostService {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             int paramIndex = 1;
+            
+            // First, set the user_id parameters for like and bookmark checks (2 parameters)
             for (Object param : params) {
-                if (param instanceof List) {
-                    @SuppressWarnings("unchecked")
-                    List<String> hashtagList = (List<String>) param;
-                    for (String hashtag : hashtagList) {
-                        stmt.setString(paramIndex++, hashtag);
-                    }
-                } else {
+                if (!(param instanceof List)) {
                     stmt.setObject(paramIndex++, param);
                 }
             }
+            
+            // Then, set the hashtag parameters (hashtags.size() parameters)
+            for (String hashtag : hashtags) {
+                stmt.setString(paramIndex++, hashtag);
+            }
+            
+            // No additional parameters needed for OR logic
             
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
@@ -381,5 +383,7 @@ public class PostService {
     }
 
 }
+
+
 
 
