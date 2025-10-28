@@ -58,9 +58,7 @@ public class PostService {
         }
     }
 
-    /**
-     * Gets posts from users that the logged-in user follows, ordered by most recent first.
-     */
+    
     public List<Post> getPostsFromFollowing(Long userId) {
     String sql = "SELECT p.post_id, p.content, p.created_at, " +
                  "u.userId, u.firstName, u.lastName, " +
@@ -81,9 +79,7 @@ public class PostService {
 }
 
 
-    /**
-     * Gets posts from a specific user, ordered by most recent first.
-     */
+    
     public List<Post> getPostsByUser(Long userId, Long currentUserId) {
         String sql = "SELECT p.post_id, p.content, p.created_at, " +
                     "u.userId, u.firstName, u.lastName, " +
@@ -103,9 +99,7 @@ public class PostService {
         return executePostQuery(sql, currentUserId, currentUserId, userId);
     }
 
-    /**
-     * Gets bookmarked posts for a user, ordered by most recent first.
-     */
+   
     public List<Post> getBookmarkedPosts(Long userId) {
         String sql = "SELECT p.post_id, p.content, p.created_at, " +
                     "u.userId, u.firstName, u.lastName, " +
@@ -126,9 +120,7 @@ public class PostService {
         return executePostQuery(sql, userId, userId, userId);
     }
 
-    /**
-     * Gets posts by hashtags, ordered by most recent first.
-     */
+  
     public List<Post> getPostsByHashtags(List<String> hashtags, Long currentUserId) {
     if (hashtags == null || hashtags.isEmpty()) {
         return new ArrayList<>();
@@ -158,8 +150,7 @@ public class PostService {
         sql.append("GROUP BY p.post_id, p.content, p.created_at, u.userId, u.firstName, u.lastName ");
         sql.append("ORDER BY p.created_at DESC");
 
-    // The helper only binds from the varargs.
-    // ORDER MATTERS: likeUserId, bookmarkUserId, IN (...) tags, HAVING tagCount
+    
         return executePostQueryWithHashtags(
         sql.toString(),
         hashtags,                       // required by signature (ignored by binder)
@@ -168,9 +159,7 @@ public class PostService {
     );
 }
 
-    /**
-     * Helper method to execute post queries and return Post objects.
-     */
+   
     private List<Post> executePostQuery(String sql, Object... params) {
         List<Post> posts = new ArrayList<>();
         
@@ -217,16 +206,24 @@ public class PostService {
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             
             int paramIndex = 1;
+            
+            // Debug: Print SQL and parameters
+            System.out.println("SQL: " + sql);
+            System.out.println("Hashtags: " + hashtags);
+            System.out.println("Params: " + java.util.Arrays.toString(params));
+            
+            // Set the fixed parameters first (currentUserId for user_like and user_bookmark)
             for (Object param : params) {
-                if (param instanceof List) {
-                    @SuppressWarnings("unchecked")
-                    List<String> hashtagList = (List<String>) param;
-                    for (String hashtag : hashtagList) {
-                        stmt.setString(paramIndex++, hashtag);
-                    }
-                } else {
+                if (!(param instanceof List)) {
+                    System.out.println("Setting param " + paramIndex + " = " + param);
                     stmt.setObject(paramIndex++, param);
                 }
+            }
+            
+            // Then set the hashtag parameters
+            for (String hashtag : hashtags) {
+                System.out.println("Setting hashtag param " + paramIndex + " = " + hashtag);
+                stmt.setString(paramIndex++, hashtag);
             }
             
             try (ResultSet rs = stmt.executeQuery()) {
@@ -255,9 +252,8 @@ public class PostService {
         return posts;
     }
 
-    /**
-     * Gets a specific post with its comments, ordered from oldest to latest.
-     */
+    
+   
     public ExpandedPost getPostWithComments(Long postId, Long currentUserId) {
         // First get the post details
         String postSql = "SELECT p.post_id, p.content, p.created_at, " +
@@ -347,9 +343,7 @@ public class PostService {
                                post.getHearted(), post.isBookmarked(), comments);
     }
 
-    /**
-     * Adds or removes a like for a post by a user.
-     */
+    
     public void toggleLike(Long userId, Long postId, boolean isAdd) {
         if (isAdd) {
             String sql = "INSERT IGNORE INTO `like` (user_id, post_id) VALUES (?, ?)";
@@ -360,9 +354,7 @@ public class PostService {
         }
     }
 
-    /**
-     * Adds or removes a bookmark for a post by a user.
-     */
+   
     public void toggleBookmark(Long userId, Long postId, boolean isAdd) {
         if (isAdd) {
             String sql = "INSERT IGNORE INTO bookmark (user_id, post_id) VALUES (?, ?)";
@@ -373,9 +365,7 @@ public class PostService {
         }
     }
 
-    /**
-     * Formats a timestamp to the required format: "Mar 07, 2025, 10:54 PM"
-     */
+   
     private String formatDate(Timestamp timestamp) {
         if (timestamp == null) {
             return "Unknown";
@@ -385,5 +375,6 @@ public class PostService {
     }
 
 }
+
 
 
