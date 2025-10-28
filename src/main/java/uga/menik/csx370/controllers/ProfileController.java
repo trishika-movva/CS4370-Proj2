@@ -27,13 +27,11 @@ import uga.menik.csx370.models.User;
 @RequestMapping("/profile")
 public class ProfileController {
 
-    // UserService has user login and registration related functions.
     private final UserService userService;
     private final PostService postService;
 
     /**
-     * See notes in AuthInterceptor.java regarding how this works 
-     * through dependency injection and inversion of control.
+     * Constructor-based dependency injection for UserService and PostService.
      */
     @Autowired
     public ProfileController(UserService userService, PostService postService) {
@@ -54,14 +52,11 @@ public class ProfileController {
     /**
      * This function handles /profile/{userId} URL.
      * This serves the webpage that shows posts of a speific user given by userId.
-     * See comments in PeopleController.java in followUnfollowUser function regarding 
-     * how path variables work.
      */
     @GetMapping("/{userId}")
     public ModelAndView profileOfSpecificUser(@PathVariable("userId") String userId) {
         System.out.println("User is attempting to view profile: " + userId);
         
-        // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("posts_page");
 
         try {
@@ -89,11 +84,6 @@ public class ProfileController {
             List<Post> posts = Utility.createSamplePostsListWithoutComments();
             mv.addObject("posts", posts);
         }
-
-        // If an error occured, you can set the following property with the
-        // error message to show the error message to the user.
-        // String errorMessage = "Some error occured!";
-        // mv.addObject("errorMessage", errorMessage);
         
         return mv;
     }

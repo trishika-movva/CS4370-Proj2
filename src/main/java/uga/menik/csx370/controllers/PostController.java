@@ -37,19 +37,12 @@ public class PostController {
     /**
      * This function handles the /post/{postId} URL.
      * This handlers serves the web page for a specific post.
-     * Note there is a path variable {postId}.
-     * An example URL handled by this function looks like below:
-     * http://localhost:8081/post/1
-     * The above URL assigns 1 to postId.
-     * 
-     * See notes from HomeController.java regardig error URL parameter.
      */
     @GetMapping("/{postId}")
     public ModelAndView webpage(@PathVariable("postId") String postId,
             @RequestParam(name = "error", required = false) String error,
             jakarta.servlet.http.HttpSession session) {
         System.out.println("The user is attempting to view post with id: " + postId);
-        // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("posts_page");
 
         try {
@@ -62,7 +55,6 @@ public class PostController {
             Long currentUserId = Long.parseLong(userIdObj.toString());
             Long postIdLong = Long.parseLong(postId);
             
-            // Get the specific post with comments
             ExpandedPost post = postService.getPostWithComments(postIdLong, currentUserId);
             if (post != null) {
                 List<ExpandedPost> posts = List.of(post);
@@ -78,9 +70,6 @@ public class PostController {
             mv.addObject("posts", posts);
         }
 
-        // If an error occured, you can set the following property with the
-        // error message to show the error message to the user.
-        // An error message can be optionally specified with a url query parameter too.
         String errorMessage = error;
         mv.addObject("errorMessage", errorMessage);
 
@@ -89,9 +78,6 @@ public class PostController {
 
     /**
      * Handles comments added on posts.
-     * See comments on webpage function to see how path variables work here.
-     * This function handles form posts.
-     * See comments in HomeController.java regarding form submissions.
      */
     @PostMapping("/{postId}/comment")
     public String postComment(@PathVariable("postId") String postId,
@@ -111,7 +97,7 @@ public class PostController {
 
         try {
             commentService.addComment(userId, postIdLong, comment);
-            System.out.println("✅ Comment added successfully by user " + userId);
+            System.out.println("Comment added successfully by user " + userId);
             return "redirect:/post/" + postId; // reload post with comment visible
         } catch (Exception e) {
             e.printStackTrace();
@@ -124,9 +110,6 @@ public class PostController {
 
     /**
      * Handles likes added on posts.
-     * See comments on webpage function to see how path variables work here.
-     * See comments in PeopleController.java in followUnfollowUser function regarding 
-     * get type form submissions and how path variables work.
      */
     @GetMapping("/{postId}/heart/{isAdd}")
     public String addOrRemoveHeart(@PathVariable("postId") String postId,
@@ -159,9 +142,6 @@ public class PostController {
 
     /**
      * Handles bookmarking posts.
-     * See comments on webpage function to see how path variables work here.
-     * See comments in PeopleController.java in followUnfollowUser function regarding 
-     * get type form submissions.
      */
     @GetMapping("/{postId}/bookmark/{isAdd}")
     public String addOrRemoveBookmark(@PathVariable("postId") String postId,
@@ -199,8 +179,7 @@ public class PostController {
     private CommentService commentService;
 
     /**
-     * * Handles creating a new post by the logged-in user.
-     * * Connected with the <form> in new_post_form.mustache
+     * Handles creating a new post by the logged-in user.
  */
 @PostMapping("/new")
 public String createPost(@RequestParam("content") String content,

@@ -153,9 +153,9 @@ public class PostService {
     
         return executePostQueryWithHashtags(
         sql.toString(),
-        hashtags,                       // required by signature (ignored by binder)
-        currentUserId,                  // 1) user_like.user_id = ?
-        currentUserId                   // 2) user_bookmark.user_id = ?
+        hashtags,          
+        currentUserId,           
+        currentUserId         
     );
 }
 
@@ -207,12 +207,11 @@ public class PostService {
             
             int paramIndex = 1;
             
-            // Debug: Print SQL and parameters
             System.out.println("SQL: " + sql);
             System.out.println("Hashtags: " + hashtags);
             System.out.println("Params: " + java.util.Arrays.toString(params));
             
-            // Set the fixed parameters first (currentUserId for user_like and user_bookmark)
+            // First set the non-hashtag parameters
             for (Object param : params) {
                 if (!(param instanceof List)) {
                     System.out.println("Setting param " + paramIndex + " = " + param);
@@ -220,7 +219,7 @@ public class PostService {
                 }
             }
             
-            // Then set the hashtag parameters
+            // Now set the hashtag parameters
             for (String hashtag : hashtags) {
                 System.out.println("Setting hashtag param " + paramIndex + " = " + hashtag);
                 stmt.setString(paramIndex++, hashtag);
@@ -306,7 +305,7 @@ public class PostService {
             return null;
         }
 
-        // Now get the comments for this post
+        // Now get the comments for the post
         String commentsSql = "SELECT c.comment_id, c.content, c.created_at, " +
                            "u.userId, u.firstName, u.lastName " +
                            "FROM comment c " +

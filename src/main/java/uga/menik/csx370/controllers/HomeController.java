@@ -39,16 +39,11 @@ public class HomeController {
     private UserService userService;
 
     /**
-     * This is the specific function that handles the root URL itself.
-     * 
-     * Note that this accepts a URL parameter called error.
-     * The value to this parameter can be shown to the user as an error message.
-     * See notes in HashtagSearchController.java regarding URL parameters.
+     * This function handles the / URL.
      */
     @GetMapping
     public ModelAndView webpage(@RequestParam(name = "error", required = false) String error,
                                HttpSession session) {
-        // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("home_page");
 
         try {
@@ -71,14 +66,11 @@ public class HomeController {
 
         } catch (Exception e) {
             e.printStackTrace();
-            // Fallback to sample data if there's an error
             List<Post> posts = Utility.createSamplePostsListWithoutComments();
             mv.addObject("posts", posts);
         }
 
-        // If an error occured, you can set the following property with the
-        // error message to show the error message to the user.
-        // An error message can be optionally specified with a url query parameter too.
+        // If an error occured, you can set the following property with the error message to show the error message to the user.
         String errorMessage = error;
         mv.addObject("errorMessage", errorMessage);
 
@@ -86,12 +78,7 @@ public class HomeController {
     }
 
     /**
-     * This function handles the /createpost URL.
-     * This handles a post request that is going to be a form submission.
-     * The form for this can be found in the home page. The form has a
-     * input field with name = posttext. Note that the @RequestParam
-     * annotation has the same name. This makes it possible to access the value
-     * from the input from the form after it is submitted.
+     * This function handles post creation form submissions from the home page.
      */
     @PostMapping("/createpost")
     public String createPost(@RequestParam(name = "posttext") String postText,

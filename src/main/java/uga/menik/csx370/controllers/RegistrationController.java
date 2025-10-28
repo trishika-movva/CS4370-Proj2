@@ -26,8 +26,7 @@ public class RegistrationController {
     private final UserService userService;
 
     /**
-     * See notes in AuthInterceptor.java regarding how this works 
-     * through dependency injection and inversion of control.
+     * Constructor-based dependency injection for UserService.
      */
     @Autowired
     public RegistrationController(UserService userService) {
@@ -36,14 +35,12 @@ public class RegistrationController {
 
     /**
      * This function serves the /register page.
-     * See notes from LoginController.java.
      */
     @GetMapping
     public ModelAndView webpage(@RequestParam(name = "error", required = false) String error) {
         ModelAndView mv = new ModelAndView("registration_page");
 
-        // If an error occured, you can set the following property with the
-        // error message to show the error message to the user.
+        // If there is an error message, pass it to the view to show to the user.
         mv.addObject("errorMessage", error);
 
         return mv;
@@ -51,7 +48,6 @@ public class RegistrationController {
 
     /**
      * This handles user registration form submissions.
-     * See notes from LoginController.java.
      */
     @PostMapping
     public String register(@RequestParam("username") String username,
@@ -62,14 +58,12 @@ public class RegistrationController {
         // Passwords should have at least 3 chars.
         if (password.trim().length() < 3) {
             // If the password is too short redirect to the registration page
-            // with an error message.
             String message = URLEncoder.encode("Passwords should have at least 3 nonempty letters.", "UTF-8");
             return "redirect:/register?error=" + message;
         }
 
         if (!password.equals(passwordRepeat)) {
             // If the password repeat does not match the password redirect to the registration page
-            // with an error message.
             String message = URLEncoder.encode("Passwords do not match.", "UTF-8");
             return "redirect:/register?error=" + message;
         }

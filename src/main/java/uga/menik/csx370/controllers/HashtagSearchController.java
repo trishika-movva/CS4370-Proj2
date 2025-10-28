@@ -22,8 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import java.util.ArrayList;
 
 /**
- * Handles /hashtagsearch URL and possibly others.
- * At this point no other URLs.
+ * Handles /hashtagsearch URL and its sub URLs.
  */
 @Controller
 @RequestMapping("/hashtagsearch")
@@ -36,17 +35,12 @@ public class HashtagSearchController {
     private UserService userService;
 
     /**
-     * This function handles the /hashtagsearch URL itself.
-     * This URL can process a request parameter with name hashtags.
-     * In the browser the URL will look something like below:
-     * http://localhost:8081/hashtagsearch?hashtags=%23amazing+%23fireworks
-     * Note: the value of the hashtags is URL encoded.
+     * This function handles the /hashtagsearch URL.
      */
     @GetMapping
     public ModelAndView webpage(@RequestParam(name = "hashtags") String hashtags) {
         System.out.println("User is searching: " + hashtags);
 
-        // See notes on ModelAndView in BookmarksController.java.
         ModelAndView mv = new ModelAndView("posts_page");
 
         try {
@@ -81,11 +75,6 @@ public class HashtagSearchController {
             List<Post> posts = Utility.createSamplePostsListWithoutComments();
             mv.addObject("posts", posts);
         }
-
-        // If an error occured, you can set the following property with the
-        // error message to show the error message to the user.
-        // String errorMessage = "Some error occured!";
-        // mv.addObject("errorMessage", errorMessage);
         
         return mv;
     }

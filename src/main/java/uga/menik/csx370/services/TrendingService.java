@@ -13,7 +13,7 @@ public class TrendingService {
     @Autowired
     private JdbcTemplate jdbcTemplate;
 
-    // DTOs
+    // Data classes for returning results
     public static class TagTrend {
         public final String tag;
         public final long usageCount;
@@ -46,10 +46,11 @@ public class TrendingService {
         }
     }
 
-    /** Top hashtags in the last N days. */
+    /** 
+     * Top hashtags in the last N days. 
+    */
     public List<TagTrend> getTopHashtags(int days, int limit) {
-        // MySQL allows binding for the interval value, but LIMIT is finicky across drivers.
-        // Safer: bind days; inject validated LIMIT.
+        // Ensure limit is within reasonable bounds
         int safeLimit = Math.max(1, Math.min(limit, 50));
 
         String sql =
@@ -80,7 +81,9 @@ public class TrendingService {
         return out;
     }
 
-    /** Most liked posts in the last N days (ties broken by newest). */
+    /** 
+     * Most liked posts in the last N days.
+    */
     public List<PopularPost> getMostLikedPosts(int days, int limit) {
         int safeLimit = Math.max(1, Math.min(limit, 50));
 

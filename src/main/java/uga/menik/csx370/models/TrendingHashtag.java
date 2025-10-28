@@ -17,7 +17,6 @@ public class TrendingHashtag {
         return usageCount;
     }
 
-    /** Link to your existing hashtag search route */
     public String getHashtagLink() {
         return "/hashtagsearch?hashtags=%23" + tag;
     }

@@ -30,10 +30,10 @@ public class CommentService {
             stmt.setTimestamp(4, new Timestamp(System.currentTimeMillis()));
             stmt.executeUpdate();
 
-            System.out.println("✅ Comment inserted successfully!");
+            System.out.println("Comment inserted successfully!");
 
         } catch (SQLException e) {
-            System.err.println("❌ SQL Error inserting comment: " + e.getMessage());
+            System.err.println("SQL Error inserting comment: " + e.getMessage());
             e.printStackTrace();
             throw new RuntimeException("Failed to insert comment into database", e);
         }

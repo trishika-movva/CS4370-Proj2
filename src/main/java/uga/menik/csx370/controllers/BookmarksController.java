@@ -21,10 +21,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * Handles /bookmarks and its sub URLs.
- * No other URLs at this point.
- * 
- * Learn more about @Controller here: 
- * https://docs.spring.io/spring-framework/reference/web/webmvc/mvc-controller.html
  */
 @Controller
 @RequestMapping("/bookmarks")
@@ -41,9 +37,6 @@ public class BookmarksController {
      */
     @GetMapping
     public ModelAndView webpage() {
-        // posts_page is a mustache template from src/main/resources/templates.
-        // ModelAndView class enables initializing one and populating placeholders
-        // in the template using Java objects assigned to named properties.
         ModelAndView mv = new ModelAndView("posts_page");
 
         try {
@@ -70,11 +63,6 @@ public class BookmarksController {
             List<Post> posts = Utility.createSamplePostsListWithoutComments();
             mv.addObject("posts", posts);
         }
-
-        // If an error occured, you can set the following property with the
-        // error message to show the error message to the user.
-        // String errorMessage = "Some error occured!";
-        // mv.addObject("errorMessage", errorMessage);
 
         return mv;
     }

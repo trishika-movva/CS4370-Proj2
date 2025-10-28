@@ -27,7 +27,6 @@ public class PeopleService {
 
     /**
      * Returns a list of followable users (excluding the current user),
-     * including formatted last post time like "Mar 07, 2025, 10:54 PM".
      */
     public List<FollowableUser> getFollowableUsers(String userIdToExclude) {
         String sql =
@@ -71,7 +70,9 @@ public class PeopleService {
         return users;
     }
 
-    /** Adds a follow record to the database. */
+    /** 
+     * Adds a follow record to the database. 
+    */
     public void follow(String followerId, String followeeId) {
         String sql = "INSERT IGNORE INTO follow(follower_id, followee_id) VALUES (?, ?)";
         try (Connection conn = dataSource.getConnection();
@@ -84,7 +85,9 @@ public class PeopleService {
         }
     }
 
-    /** Removes a follow record from the database. */
+    /** 
+     * Removes a follow record from the database. 
+    */
     public void unfollow(String followerId, String followeeId) {
         String sql = "DELETE FROM follow WHERE follower_id = ? AND followee_id = ?";
         try (Connection conn = dataSource.getConnection();
