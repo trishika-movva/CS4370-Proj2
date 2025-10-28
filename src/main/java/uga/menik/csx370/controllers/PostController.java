@@ -50,7 +50,7 @@ public class PostController {
             jakarta.servlet.http.HttpSession session) {
         System.out.println("The user is attempting to view post with id: " + postId);
         // See notes on ModelAndView in BookmarksController.java.
-        ModelAndView mv = new ModelAndView("post_detail_page");
+        ModelAndView mv = new ModelAndView("posts_page");
 
         try {
             Object userIdObj = session.getAttribute("userId");

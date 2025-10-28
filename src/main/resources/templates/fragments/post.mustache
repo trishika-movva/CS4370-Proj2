@@ -39,4 +39,8 @@
             {{/isBookmarked}}
         </div>
     </div>
+    
+    {{#isShowComments}}
+    {{> fragments/comments_container}}
+    {{/isShowComments}}
 </div>

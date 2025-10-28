@@ -34,7 +34,7 @@ public class ExpandedPost extends Post {
     public ExpandedPost(String postId, String content, String postDate, User user, int heartsCount, int commentsCount, boolean isHearted, boolean isBookmarked, List<Comment> comments) {
         super(postId, content, postDate, user, heartsCount, commentsCount, isHearted, isBookmarked);
         this.comments = comments;
-        this.isShowComents = true;
+        this.isShowComments = true;
     }
 
     /**

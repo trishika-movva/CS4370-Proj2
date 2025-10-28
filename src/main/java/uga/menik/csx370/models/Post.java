@@ -34,7 +34,7 @@ public class Post extends BasicPost {
     /**
      * Flag to specify whether to show comments or not.
      */
-    protected boolean isShowComents;
+    protected boolean isShowComments;
 
     /**
      * Constructs a Post with specified details including information from BasicPost.
@@ -54,7 +54,7 @@ public class Post extends BasicPost {
         this.commentsCount = commentsCount;
         this.isHearted = isHearted;
         this.isBookmarked = isBookmarked;
-        this.isShowComents = false;
+        this.isShowComments = false;
     }
 
     /**
